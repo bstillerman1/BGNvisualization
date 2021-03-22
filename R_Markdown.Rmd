@@ -6,45 +6,30 @@ output:
   pdf_document: default
   html_document: default
 ---
+```{r, include = FALSE}
+library(tidyverse)
+library(tinytex)
+library(knitr)
+library(readxl)
 
-
-```{r}
- acgr %>% 
-  filter(ACGR_total >= 0.9) %>% 
-  select(statename, ACGR_total)
-```
-
-```{r}
-acgr %>% 
-  arrange(desc(ACGR_total)) %>% 
-  slice(1:10)
-
-ggplot(data = acgr, aes(x = ACGR_total, y = ACGR_black)) +
-  geom_point()
-```
-
-
-
-```{r}
-acgr <- acgr %>% 
-  mutate(black_white = ACGR_white - ACGR_black) %>% 
-  mutate(hisp_white = ACGR_white - ACGR_hispanic) %>% 
-  mutate(lowinc_diff = ACGR_total - ACGR_lowinc)
-
-acgr_bw10 <- acgr %>% 
-  arrange(desc(black_white)) %>% 
-  slice(1:10)
-
-  ggplot(data = acgr_bw10, aes(x = statename, y = black_white, fill = ACGR_black)) +
-  geom_bar(stat = "identity") +
-  coord_flip() +
-    theme_bw()
+acgr <- read_excel("ACGR_statedata.xlsx")
+ACGR_state_longformat <- read_excel("ACGR_state_longformat.xlsx")
 ```
 
 
 ```{r}
-ggplot(data = acgr, aes(x = black_white, y = hisp_white)) +
-  geom_point()
+ACGR_state_longformat$acgr <- as.numeric(as.character(unlist(ACGR_state_longformat$acgr)))
+
+states = unique(ACGR_state_longformat$state)
+state_ACGR_plots = list()
+
+for (state_ in states) {
+  state_ACGR_plots[[state_]] = ggplot(ACGR_state_longformat %>% filter(state == state_ & acgr != "NA"), aes(x = year, y = acgr)) + geom_point() + geom_smooth(method = "lm") + theme_bw() + ggtitle(state_) + ylab("ACGR for available data") + xlab("Year") 
+  
+  print(state_ACGR_plots[state_])
+  
+}
+
 ```
 
 
