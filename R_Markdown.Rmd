@@ -33,3 +33,37 @@ for (state_ in states) {
 ```
 
 
+```{r}
+acgr_long_subgroups <- acgr %>% 
+  gather(race, acgr, ACGR_black:ACGR_white) %>% 
+  select(statename, race, acgr) 
+
+acgr_long_subgroups$race <- as.factor(acgr_long_subgroups$race)
+
+
+```
+
+```{r}
+acgr_long_subgroups <- acgr_long_subgroups %>% 
+  mutate(National_avg = case_when(
+    statename == "United States" ~ "National average",
+    statename != "United States" ~ "State average") %>% 
+      as.factor() %>% 
+      structure(levels = c("National average", "State average"))
+  )
+
+
+states2 = unique(acgr_long_subgroups$statename)
+state_subgroup_bar = list()
+
+for (i in states2) {
+  state_subgroup_bar[[i]] = ggplot(acgr_long_subgroups %>% filter(statename == i|statename == "United States"), aes(x = race, y = acgr, fill = National_avg)) + geom_bar(position = "dodge", stat = "identity") + theme_bw() + xlab("Subgroup") + ylab("ACGR") + ggtitle(i) + coord_flip()
+  
+  print(state_subgroup_bar[i])
+  
+}
+
+```
+
+
+
