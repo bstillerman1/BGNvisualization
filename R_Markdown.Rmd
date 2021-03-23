@@ -11,20 +11,24 @@ library(tidyverse)
 library(tinytex)
 library(knitr)
 library(readxl)
+library(maps)
+library(tools)
 
 acgr <- read_excel("ACGR_statedata.xlsx")
 ACGR_state_longformat <- read_excel("ACGR_state_longformat.xlsx")
+
+MainStates <- map_data("state")
 ```
 
 
-```{r}
+```{r trendlines for ACGR}
 ACGR_state_longformat$acgr <- as.numeric(as.character(unlist(ACGR_state_longformat$acgr)))
 
 states = unique(ACGR_state_longformat$state)
 state_ACGR_plots = list()
 
 for (state_ in states) {
-  state_ACGR_plots[[state_]] = ggplot(ACGR_state_longformat %>% filter(state == state_ & acgr != "NA"), aes(x = year, y = acgr)) + geom_point() + geom_smooth(method = "lm") + theme_bw() + ggtitle(state_) + ylab("ACGR for available data") + xlab("Year") 
+  state_ACGR_plots[[state_]] = ggplot(ACGR_state_longformat %>% filter(state == state_ & acgr != "NA"), aes(x = year, y = acgr)) + geom_point() + geom_smooth(method = "lm") + theme_bw() + ggtitle(state_) + scale_y_continuous(name = "ACGR", limits = c(60,95)) + xlab("Year") 
   
   print(state_ACGR_plots[state_])
   
@@ -43,7 +47,7 @@ acgr_long_subgroups$race <- as.factor(acgr_long_subgroups$race)
 
 ```
 
-```{r}
+```{r subgroup bar}
 acgr_long_subgroups <- acgr_long_subgroups %>% 
   mutate(National_avg = case_when(
     statename == "United States" ~ "National average",
@@ -57,7 +61,7 @@ states2 = unique(acgr_long_subgroups$statename)
 state_subgroup_bar = list()
 
 for (i in states2) {
-  state_subgroup_bar[[i]] = ggplot(acgr_long_subgroups %>% filter(statename == i|statename == "United States"), aes(x = race, y = acgr, fill = National_avg)) + geom_bar(position = "dodge", stat = "identity", width = 0.5) + theme_bw() + xlab("Subgroup") + ylab("ACGR") + ggtitle(i) + coord_flip()
+  state_subgroup_bar[[i]] = ggplot(acgr_long_subgroups %>% filter(statename == i|statename == "United States"), aes(x = race, y = acgr, fill = National_avg)) + geom_bar(position = "dodge", stat = "identity", width = 0.5) + theme_bw() + xlab("Subgroup") + ylab("ACGR") + ggtitle(i) + coord_flip(ylim = c(0.6, 0.95))
   
   print(state_subgroup_bar[i])
   
@@ -66,4 +70,54 @@ for (i in states2) {
 ```
 
 
+```{r chloropleth}
+ggplot() +
+  geom_polygon(data = MainStates, aes(x = long, y = lat, group = group),
+    color = "black", fill = "lightblue") 
+
+MainStates <- MainStates %>% 
+  rename(statename = region)
+```
+
+```{r}
+MainStates$statename <- toupper(MainStates$statename)
+acgr$statename <- toupper(acgr$statename)
+
+
+MergedStates <- inner_join(MainStates, acgr, by = "statename")
+
+ ggplot() +
+  geom_polygon(data = MergedStates, 
+               aes(x=long, y=lat, group=group,
+                   fill=ACGR_total),
+               color = "white") + theme_minimal()
+ 
+ 
+  ggplot() +
+  geom_polygon(data = MergedStates, 
+               aes(x=long, y=lat, group=group,
+                   fill=ACGR_black),
+               color = "white") + theme_minimal()
+  
+  
+    ggplot() +
+  geom_polygon(data = MergedStates, 
+               aes(x=long, y=lat, group=group,
+                   fill=ACGR_white),
+               color = "white") + theme_minimal()
+  
+  
+    ggplot() +
+  geom_polygon(data = MergedStates, 
+               aes(x=long, y=lat, group=group,
+                   fill=ACGR_hispanic),
+               color = "white") + theme_minimal()
+    
+     ggplot() +
+  geom_polygon(data = MergedStates, 
+               aes(x=long, y=lat, group=group,
+                   fill=ACGR_lowinc),
+               color = "white") + theme_minimal()
+
+```
 
